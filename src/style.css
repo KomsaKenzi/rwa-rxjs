@@ -1,0 +1,54 @@
+body{
+    background-color:darksalmon;
+}
+
+
+
+.balance {
+    display: flex;
+    flex-direction: row;
+    justify-content: end;
+    align-items: center;
+    margin-bottom: 5px;
+    width: 100%;
+    font-size: 25px;
+}
+
+.cards {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+/* .wizard, .warrior, .healer {
+    border: 1px;
+    border-color: black;
+    border-style: dashed;
+} */
+
+.info {
+    display: flex;
+    flex-direction: column;
+    margin: 50px;
+}
+
+.cards_owned {
+    display: flex;
+    flex-direction: column;
+    margin: 50px;
+}
+.objedinjeno {
+    display: flex;
+    flex-direction: row;
+}
+.statistic{
+    margin-left: 50px;
+}
+.wizard_o, .warrior_o, .healer_o{
+    padding-bottom: 50px;
+    border: 1px;
+    border-color: black;
+    border-style: dashed;
+}
