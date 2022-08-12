@@ -1,7 +1,7 @@
 import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith } from "rxjs";
-import { BubbleController, Chart, ChartType, registerables } from "chart.js";
+import { BubbleController, Chart, ChartType, registerables, UpdateModeEnum } from "chart.js";
 
-let hprice:number;
+
 let pocetnoStanje = {
     money: 1000,
     wizard: 0,
@@ -16,135 +16,226 @@ let pocetnoStanje = {
 
 
 
+function init() {
+    const balance = document.getElementsByClassName('balance')[0];
+    const novac = document.createElement("div");
+    novac.classList.add("novac");
+    novac.innerHTML = `<span>Balance: ${pocetnoStanje.money}</span>`;
+    balance.appendChild(novac);
 
+    const cards = document.getElementsByClassName('cards')[0];
+    const wizard = document.createElement("img");
+    wizard.classList.add("wizard");
+    wizard.src = "./src/pics/wizard.png";
+    cards.appendChild(wizard);
 
-const balance = document.getElementsByClassName('balance')[0];
-const novac = document.createElement("div");
-novac.innerHTML = `<span>Balance: ${pocetnoStanje.money}</span>`;
-balance.appendChild(novac);
-
-
-const cards = document.getElementsByClassName('cards')[0];
-const wizard = document.createElement("img");
-wizard.classList.add("wizard");
-wizard.src = "./src/pics/wizard.png";
-cards.appendChild(wizard);
-
-const wizard_info = document.createElement("div");
-wizard_info.classList.add("info");
-wizard_info.innerHTML = `<span>Name: Wizard</span>
+    const wizard_info = document.createElement("div");
+    wizard_info.classList.add("info");
+    wizard_info.innerHTML = `<span>Name: Wizard</span>
 <span>Main weapon: Staff</span>
 <span>Starting price: ${pocetnoStanje.start_price}</span>
-<span>Price: ${pocetnoStanje.start_price}</span>
+<span class="smanjiti">Price: ${pocetnoStanje.wiprice}</span>
 <span>Defence: 40</span>
 <span>Attack: 70</span>
 <span>Mana: 100</span>`;
-cards.appendChild(wizard_info);
+    cards.appendChild(wizard_info);
 
-const wizard_buy = document.createElement("button");
-wizard_buy.innerHTML = "Buy"
-wizard_info.appendChild(wizard_buy);
+    const wizard_buy = document.createElement("button");
+    wizard_buy.onclick = wizard_bought;
+    wizard_buy.innerHTML = "Buy"
+    wizard_info.appendChild(wizard_buy);
 
-const warrior = document.createElement("img");
-warrior.classList.add("warrior");
-warrior.src = "./src/pics/warrior.png";
-cards.appendChild(warrior);
+    const warrior = document.createElement("img");
+    warrior.classList.add("warrior");
+    warrior.src = "./src/pics/warrior.png";
+    cards.appendChild(warrior);
 
-const warrior_info = document.createElement("div");
-warrior_info.classList.add("info");
-warrior_info.innerHTML = `<span>Name: Warrior</span>
+    const warrior_info = document.createElement("div");
+    warrior_info.classList.add("info");
+    warrior_info.innerHTML = `<span>Name: Warrior</span>
 <span>Main weapon: Sword</span>
 <span>Starting price: ${pocetnoStanje.start_price}</span>
-<span>Price: ${pocetnoStanje.start_price}</span>
+<span class="smanjiti">Price: ${pocetnoStanje.waprice}</span>
 <span>Defence: 80</span>
 <span>Attack: 50</span>
 <span>Mana: 20</span>`;
-cards.appendChild(warrior_info);
+    cards.appendChild(warrior_info);
 
-const warrior_buy = document.createElement("button");
-warrior_buy.innerHTML = "Buy"
-warrior_info.appendChild(warrior_buy);
+    const warrior_buy = document.createElement("button");
+    warrior_buy.onclick = warrior_bought;
+    warrior_buy.innerHTML = "Buy"
+    warrior_info.appendChild(warrior_buy);
 
-const healer = document.createElement("img");
-healer.classList.add("healer");
-healer.src = "./src/pics/healer.png";
-cards.appendChild(healer);
+    const healer = document.createElement("img");
+    healer.classList.add("healer");
+    healer.src = "./src/pics/healer.png";
+    cards.appendChild(healer);
 
-const healer_info = document.createElement("div");
-healer_info.classList.add("info");
-healer_info.innerHTML = `<span>Name: Healer</span>
+    const healer_info = document.createElement("div");
+    healer_info.classList.add("info");
+    healer_info.innerHTML = `<span>Name: Healer</span>
 <span>Main weapon: Bow</span>
 <span>Starting price: ${pocetnoStanje.start_price}</span>
-<span>Price: ${pocetnoStanje.start_price}</span>
+<span class="smanjiti">Price: ${pocetnoStanje.hprice}</span>
 <span>Defence: 50</span>
 <span>Attack: 20</span>
 <span>Mana: 150</span>`;
-cards.appendChild(healer_info);
+    cards.appendChild(healer_info);
 
-const healer_buy = document.createElement("button");
-healer_buy.innerHTML = "Buy"
-healer_info.appendChild(healer_buy);
-healer_buy.onclick(smanji(pocetnoStanje.hprice));
+    const healer_buy = document.createElement("button");
+    healer_buy.onclick = healer_bought;
+    healer_buy.innerHTML = "Buy"
+    healer_info.appendChild(healer_buy);
 
+    const statistika = document.getElementsByClassName("statistic");
 
-const statistika = document.getElementsByClassName("statistic");
+    const getDefaultChartCanvas = (): HTMLCanvasElement => {
+        return document.getElementById('chart') as HTMLCanvasElement;
+    }
 
-const getDefaultChartCanvas = (): HTMLCanvasElement => {
-    return document.getElementById('chart') as HTMLCanvasElement;
+    const initChart = (): Chart => {
+        Chart.register(...registerables);
+        const labels = [
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+        ];
+
+        const data = {
+            labels: labels,
+            datasets: [{
+                label: 'LOADING...',
+                backgroundColor: 'blue',
+                borderColor: 'yellow',
+                data: [0, 10, 5, 2, 20, 30, 45],
+            }]
+        };
+
+        const config = {
+            type: 'line' as ChartType,
+            data: data,
+            options: {}
+        };
+
+        const ctx = (getDefaultChartCanvas()).getContext('2d');
+        return new Chart(ctx, config);
+    }
+
+    chart: initChart()
+
+    const cards_owned = document.getElementsByClassName('cards_owned')[0];
+
+    const wizard_o = document.createElement("span");
+    wizard_o.classList.add("wizard_o");
+    wizard_o.innerHTML = `Wizards owned: ${pocetnoStanje.wizard}`;
+    cards_owned.appendChild(wizard_o);
+
+    const warrior_o = document.createElement("span");
+    warrior_o.classList.add("warrior_o");
+    warrior_o.innerHTML = `Warriors owned: ${pocetnoStanje.warrior}`;
+    cards_owned.appendChild(warrior_o);
+
+    const healer_o = document.createElement("span");
+    healer_o.classList.add("healer_o");
+    healer_o.innerHTML = `Healers owned: ${pocetnoStanje.healer}`;
+    cards_owned.appendChild(healer_o);
+
+    sendAllEmails();
 }
 
-const initChart = (): Chart => {
-    Chart.register(...registerables);
-    const labels = [
-        '1',
-        '2',
-        '3',
-        '4',
-        '5',
-        '6',
-    ];
 
-    const data = {
-        labels: labels,
-        datasets: [{
-            label: 'LOADING...',
-            backgroundColor: 'blue',
-            borderColor: 'yellow',
-            data: [0, 10, 5, 2, 20, 30, 45],
-        }]
-    };
-
-    const config = {
-        type: 'line' as ChartType,
-        data: data,
-        options: {}
-    };
-
-    const ctx = (getDefaultChartCanvas()).getContext('2d');
-    return new Chart(ctx, config);
+function FirstPromise() {
+    const p = new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const randInt = Math.round(Math.random() * 15);
+            resolve(randInt);
+        }, 2000);
+    });
+    return p;
 }
 
-chart: initChart()
 
-
-const cards_owned = document.getElementsByClassName('cards_owned')[0];
-
-const wizard_o = document.createElement("span");
-wizard_o.classList.add("wizard_o");
-wizard_o.innerHTML = `Wizards owned: ${pocetnoStanje.wizard}`;
-cards_owned.appendChild(wizard_o);
-
-const warrior_o = document.createElement("span");
-warrior_o.classList.add("warrior_o");
-warrior_o.innerHTML = `Warriors owned: ${pocetnoStanje.warrior}`;
-cards_owned.appendChild(warrior_o);
-
-const healer_o = document.createElement("span");
-healer_o.classList.add("healer_o");
-healer_o.innerHTML = `Healers owned: ${pocetnoStanje.healer}`;
-cards_owned.appendChild(healer_o);
-
-
-function smanji(broj:number){
-    
+async function sendAllEmails() {
+    await FirstPromise().then((x: number) => {
+        const smanji1 = document.getElementsByClassName("smanjiti")[0];
+        const smanji2 = document.getElementsByClassName("smanjiti")[1];
+        const smanji3 = document.getElementsByClassName("smanjiti")[2];
+        if(pocetnoStanje.wiprice - x < 100) pocetnoStanje.wiprice=100;
+        else pocetnoStanje.wiprice -= x;
+        if(pocetnoStanje.waprice - x < 100) pocetnoStanje.waprice=100;
+        else pocetnoStanje.waprice -= x;
+        if(pocetnoStanje.hprice - x < 100) pocetnoStanje.hprice=100;
+        else pocetnoStanje.hprice -= x;
+        smanji1.innerHTML = `Price: ${pocetnoStanje.wiprice}`;
+        smanji2.innerHTML = `Price: ${pocetnoStanje.waprice}`;
+        smanji3.innerHTML = `Price: ${pocetnoStanje.hprice}`;
+    });
+    sendAllEmails();
 }
+
+function wizard_bought(){
+    if(smanji(pocetnoStanje.wiprice)){
+    const smanji3 = document.getElementsByClassName("smanjiti")[0];
+    pocetnoStanje.wiprice = 500;
+    smanji3.innerHTML = `Price: ${pocetnoStanje.wiprice}`;
+    pocetnoStanje.wizard++;
+    updateC();
+    }
+    else{
+        console.log("Nedovoljno novaca");
+    }
+}
+
+function warrior_bought(){
+    if(smanji(pocetnoStanje.waprice)){
+    const smanji3 = document.getElementsByClassName("smanjiti")[1];
+    pocetnoStanje.waprice = 500;
+    smanji3.innerHTML = `Price: ${pocetnoStanje.waprice}`;
+    pocetnoStanje.warrior++;
+    updateC();
+}
+else{
+    console.log("Nedovoljno novaca");
+}
+}
+
+function healer_bought(){
+    if(smanji(pocetnoStanje.hprice)){
+    const smanji3 = document.getElementsByClassName("smanjiti")[2];
+    pocetnoStanje.hprice = 500;
+    smanji3.innerHTML = `Price: ${pocetnoStanje.hprice}`;
+    pocetnoStanje.healer++;
+    updateC();
+}
+else{
+    console.log("Nedovoljno novaca");
+}
+}
+
+function smanji(x: number){
+    if(pocetnoStanje.money >= x){
+    const novac = document.getElementsByClassName("novac")[0];
+    pocetnoStanje.money -= x;
+    novac.innerHTML = `<span>Balance: ${pocetnoStanje.money}</span>`;
+    return true;
+    }
+    else return false;
+}
+
+function updateC(){
+    const healer_o = document.getElementsByClassName("healer_o")[0];
+    healer_o.innerHTML = `Healers owned: ${pocetnoStanje.healer}`;
+    const warrior_o = document.getElementsByClassName("warrior_o")[0];
+    warrior_o.innerHTML = `Warriors owned: ${pocetnoStanje.warrior}`;
+    const wizard_o = document.getElementsByClassName("wizard_o")[0];
+    wizard_o.innerHTML = `Wizards owned: ${pocetnoStanje.wizard}`;
+}
+
+
+
+
+
+init();
