@@ -1,5 +1,6 @@
-import { BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith } from "rxjs";
+import { startWith, delay, BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith } from "rxjs";
 import { BubbleController, Chart, ChartType, registerables, UpdateModeEnum } from "chart.js";
+import { IKupovina } from "../interfaces/Kupovine";
 
 
 let pocetnoStanje = {
@@ -87,44 +88,6 @@ function init() {
     healer_buy.innerHTML = "Buy"
     healer_info.appendChild(healer_buy);
 
-    const statistika = document.getElementsByClassName("statistic");
-
-    const getDefaultChartCanvas = (): HTMLCanvasElement => {
-        return document.getElementById('chart') as HTMLCanvasElement;
-    }
-
-    const initChart = (): Chart => {
-        Chart.register(...registerables);
-        const labels = [
-            '1',
-            '2',
-            '3',
-            '4',
-            '5',
-            '6',
-        ];
-
-        const data = {
-            labels: labels,
-            datasets: [{
-                label: 'LOADING...',
-                backgroundColor: 'blue',
-                borderColor: 'yellow',
-                data: [0, 10, 5, 2, 20, 30, 45],
-            }]
-        };
-
-        const config = {
-            type: 'line' as ChartType,
-            data: data,
-            options: {}
-        };
-
-        const ctx = (getDefaultChartCanvas()).getContext('2d');
-        return new Chart(ctx, config);
-    }
-
-    chart: initChart()
 
     const cards_owned = document.getElementsByClassName('cards_owned')[0];
 
@@ -144,6 +107,7 @@ function init() {
     cards_owned.appendChild(healer_o);
 
     sendAllEmails();
+    statistika();
 }
 
 
@@ -234,7 +198,81 @@ function updateC(){
     wizard_o.innerHTML = `Wizards owned: ${pocetnoStanje.wizard}`;
 }
 
+const getApiURL = (): string => {
+    return "http://127.0.0.1:5500/rwa-rxjs";
+};
 
+// const getAllProjects = (): Observable<IKupovina[]> => {
+//     return from(
+//         fetch(`${getApiURL()}/db.json`)
+//             .then((res) => {
+//                 if (res.ok) return res.json();
+//                 else throw new Error("Kupovine not found");
+//             })
+//             .catch((err) => (console.log("Nema kupovina")))
+//     )
+// }
+const getAllProjects = () =>{
+    fetch(`${getApiURL()}/db.json`)
+    .then((res) => res.json())
+    .then((data) => {
+        const datum : Date = new Date;
+        var niz = new Array();
+        let mapProdaja = new Map<Date, number>();
+        data.kupovine.slice().reverse().forEach((element: any) => {
+            //console.log(datum.toLocaleDateString());
+            //console.log(element.date);
+            niz.push(element);
+        });
+        const rebels = niz.filter(datumzadnji => datumzadnji.date == datum);
+
+        console.log(rebels); 
+        
+        });
+
+}
+
+getAllProjects();
+function statistika(){
+    const getDefaultChartCanvas = (): HTMLCanvasElement => {
+        return document.getElementById('chart') as HTMLCanvasElement;
+    }
+
+    const initChart = (): Chart => {
+        Chart.register(...registerables);
+        const labels = [
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+            '7'
+        ];
+
+        const data = {
+            labels: labels,
+            datasets: [{
+                label: 'LOADING...',
+                backgroundColor: 'blue',
+                borderColor: 'yellow',
+                data: [0, 10, 5, 2, 20, 30, 45],
+            }]
+        };
+
+        const config = {
+            type: 'line' as ChartType,
+            data: data,
+            options: {}
+        };
+
+        const ctx = (getDefaultChartCanvas()).getContext('2d');
+        return new Chart(ctx, config);
+    }
+
+    chart: initChart()
+
+}
 
 
 
