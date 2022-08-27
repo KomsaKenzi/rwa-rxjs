@@ -1,6 +1,8 @@
-import { startWith, delay, BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith } from "rxjs";
+import { startWith, delay, every, BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith, interval, timer } from "rxjs";
 import { BubbleController, Chart, ChartType, registerables, UpdateModeEnum } from "chart.js";
 import { IKupovina } from "../interfaces/Kupovine";
+import { takeUntil, tap, take, takeWhile } from 'rxjs/operators';
+
 
 
 let pocetnoStanje = {
@@ -42,7 +44,8 @@ function init() {
     cards.appendChild(wizard_info);
 
     const wizard_buy = document.createElement("button");
-    wizard_buy.onclick = wizard_bought;
+    //wizard_buy.onclick = wizard_bought;
+    wizard_buy.classList.add("wizard_buy");
     wizard_buy.innerHTML = "Buy"
     wizard_info.appendChild(wizard_buy);
 
@@ -63,7 +66,7 @@ function init() {
     cards.appendChild(warrior_info);
 
     const warrior_buy = document.createElement("button");
-    warrior_buy.onclick = warrior_bought;
+    warrior_buy.classList.add("warrior_buy");
     warrior_buy.innerHTML = "Buy"
     warrior_info.appendChild(warrior_buy);
 
@@ -84,7 +87,7 @@ function init() {
     cards.appendChild(healer_info);
 
     const healer_buy = document.createElement("button");
-    healer_buy.onclick = healer_bought;
+    healer_buy.classList.add("healer_buy");
     healer_buy.innerHTML = "Buy"
     healer_info.appendChild(healer_buy);
 
@@ -106,90 +109,148 @@ function init() {
     healer_o.innerHTML = `Healers owned: ${pocetnoStanje.healer}`;
     cards_owned.appendChild(healer_o);
 
-    sendAllEmails();
-    statistika();
+    //sendAllEmails();
+    //statistika();
 }
-
+init();
 
 function FirstPromise() {
     const p = new Promise((resolve, reject) => {
         setTimeout(() => {
-            const randInt = Math.round(Math.random() * 15);
+            const randInt = Math.round(Math.random() * 100);
             resolve(randInt);
         }, 2000);
     });
     return p;
 }
 
+const source = interval(3000);
+
+  var kupovinaK = source.pipe(
+    filter(_ => (pocetnoStanje.wiprice > 100) || (pocetnoStanje.waprice > 100) || (pocetnoStanje.hprice > 100))
+  ).subscribe({
+    next: (num) => {
+        console.log('Smanjen');
+      sendAllEmails();
+    }
+  })
+
+
+  var wizard_kupljen = document.getElementsByClassName("wizard_buy")[0];
+fromEvent(wizard_kupljen, 'click').pipe(
+    // restart counter on every click
+    switchMap(async () => kupovinaK)
+  )
+  .subscribe(_ => {
+    wizard_bought();
+    console.log("reset")
+    
+  });
+
+  var warrior_kupljen = document.getElementsByClassName("warrior_buy")[0];
+fromEvent(warrior_kupljen, 'click').pipe(
+    // restart counter on every click
+    switchMap(async () => kupovinaK)
+  )
+  .subscribe(_ => {
+    warrior_bought();
+    console.log("reset")
+    
+  });
+
+  var healer_kupljen = document.getElementsByClassName("healer_buy")[0];
+fromEvent(healer_kupljen, 'click').pipe(
+    // restart counter on every click
+    switchMap(async () => kupovinaK)
+  )
+  .subscribe(_ => {
+    healer_bought();
+    console.log("reset")
+    
+  });
 
 async function sendAllEmails() {
     await FirstPromise().then((x: number) => {
         const smanji1 = document.getElementsByClassName("smanjiti")[0];
         const smanji2 = document.getElementsByClassName("smanjiti")[1];
         const smanji3 = document.getElementsByClassName("smanjiti")[2];
-        if(pocetnoStanje.wiprice - x < 100) pocetnoStanje.wiprice=100;
+        if (pocetnoStanje.wiprice - x < 100) pocetnoStanje.wiprice = 100;
         else pocetnoStanje.wiprice -= x;
-        if(pocetnoStanje.waprice - x < 100) pocetnoStanje.waprice=100;
+        if (pocetnoStanje.waprice - x < 100) pocetnoStanje.waprice = 100;
         else pocetnoStanje.waprice -= x;
-        if(pocetnoStanje.hprice - x < 100) pocetnoStanje.hprice=100;
+        if (pocetnoStanje.hprice - x < 100) pocetnoStanje.hprice = 100;
         else pocetnoStanje.hprice -= x;
         smanji1.innerHTML = `Price: ${pocetnoStanje.wiprice}`;
         smanji2.innerHTML = `Price: ${pocetnoStanje.waprice}`;
         smanji3.innerHTML = `Price: ${pocetnoStanje.hprice}`;
     });
-    sendAllEmails();
+    //sendAllEmails();
 }
 
-function wizard_bought(){
-    if(smanji(pocetnoStanje.wiprice)){
-    const smanji3 = document.getElementsByClassName("smanjiti")[0];
-    pocetnoStanje.wiprice = 500;
-    smanji3.innerHTML = `Price: ${pocetnoStanje.wiprice}`;
-    pocetnoStanje.wizard++;
-    updateC();
+const bonus: Array<number> = new Array();
+const oneClickEvent = fromEvent(document, 'click').pipe(
+    take(2),
+    tap(v => {
+        let x: number = v.screenX;
+        let y: number = v.screenY;
+        smanji(-Math.abs(x - y));
+        bonus.push(Math.abs(x - y));
+        console.log(bonus);
+    })
+);
+const subscribe = oneClickEvent.subscribe();
+
+
+function wizard_bought() {
+    if (smanji(pocetnoStanje.wiprice)) {
+        const smanji3 = document.getElementsByClassName("smanjiti")[0];
+        pocetnoStanje.wiprice = 500;
+        smanji3.innerHTML = `Price: ${pocetnoStanje.wiprice}`;
+        pocetnoStanje.wizard++;
+        updateC();
     }
-    else{
+    else {
         console.log("Nedovoljno novaca");
     }
 }
 
-function warrior_bought(){
-    if(smanji(pocetnoStanje.waprice)){
-    const smanji3 = document.getElementsByClassName("smanjiti")[1];
-    pocetnoStanje.waprice = 500;
-    smanji3.innerHTML = `Price: ${pocetnoStanje.waprice}`;
-    pocetnoStanje.warrior++;
-    updateC();
-}
-else{
-    console.log("Nedovoljno novaca");
-}
-}
-
-function healer_bought(){
-    if(smanji(pocetnoStanje.hprice)){
-    const smanji3 = document.getElementsByClassName("smanjiti")[2];
-    pocetnoStanje.hprice = 500;
-    smanji3.innerHTML = `Price: ${pocetnoStanje.hprice}`;
-    pocetnoStanje.healer++;
-    updateC();
-}
-else{
-    console.log("Nedovoljno novaca");
-}
+function warrior_bought() {
+    if (smanji(pocetnoStanje.waprice)) {
+        const smanji3 = document.getElementsByClassName("smanjiti")[1];
+        pocetnoStanje.waprice = 500;
+        smanji3.innerHTML = `Price: ${pocetnoStanje.waprice}`;
+        pocetnoStanje.warrior++;
+        updateC();
+    }
+    else {
+        console.log("Nedovoljno novaca");
+    }
 }
 
-function smanji(x: number){
-    if(pocetnoStanje.money >= x){
-    const novac = document.getElementsByClassName("novac")[0];
-    pocetnoStanje.money -= x;
-    novac.innerHTML = `<span>Balance: ${pocetnoStanje.money}</span>`;
-    return true;
+function healer_bought() {
+    if (smanji(pocetnoStanje.hprice)) {
+        const smanji3 = document.getElementsByClassName("smanjiti")[2];
+        pocetnoStanje.hprice = 500;
+        smanji3.innerHTML = `Price: ${pocetnoStanje.hprice}`;
+        pocetnoStanje.healer++;
+        updateC();
+    }
+    else {
+        console.log("Nedovoljno novaca");
+    }
+}
+
+function smanji(x: number) {
+    if (pocetnoStanje.money >= x) {
+        const novac = document.getElementsByClassName("novac")[0];
+        pocetnoStanje.money -= x;
+        novac.innerHTML = `<span>Balance: ${pocetnoStanje.money}</span>`;
+        return true;
     }
     else return false;
 }
 
-function updateC(){
+function updateC() {
     const healer_o = document.getElementsByClassName("healer_o")[0];
     healer_o.innerHTML = `Healers owned: ${pocetnoStanje.healer}`;
     const warrior_o = document.getElementsByClassName("warrior_o")[0];
@@ -212,51 +273,61 @@ const getApiURL = (): string => {
 //             .catch((err) => (console.log("Nema kupovina")))
 //     )
 // }
-const getAllProjects = () =>{
+const getAllProjects = () => {
     fetch(`${getApiURL()}/db.json`)
-    .then((res) => res.json())
-    .then((data) => {
-        const datum : Date = new Date;
-        var niz = new Array();
-        let mapProdaja = new Map<Date, number>();
-        data.kupovine.slice().reverse().forEach((element: any) => {
-            //console.log(datum.toLocaleDateString());
-            //console.log(element.date);
-            niz.push(element);
-        });
-        const rebels = niz.filter(datumzadnji => datumzadnji.date == datum);
+        .then((res) => res.json())
+        .then((data) => {
+            const datum: Date = new Date;
+            const datumDanas: Date = new Date;
+            var niz = new Array();
+            let mapProdaja = new Map<Date, number>();
+            datum.setDate(datum.getDate() - 7);
 
-        console.log(rebels); 
-        
+            data.kupovine.slice().reverse().forEach((element: any) => {
+                niz.push(element);
+            });
+
+            const ovaNedelja = niz.filter(datumzadnji => {
+                const uporedi = new Date(datumzadnji.date);
+                return uporedi.getDate() <= datumDanas.getDate() && uporedi.getDate() > datum.getDate()
+            });
+
+            ovaNedelja.forEach((element: any) => {
+                mapProdaja.set(element.date, element.sold)
+            });
+            //ovaNedelja
+            // mapProdaja.set(key, value)
+            //console.log(mapProdaja);
+
+
+            var soldWeek = ovaNedelja.reduce((acc, curVal) => acc + curVal.sold, 0);
+
+            console.log(soldWeek);
+            statistika(mapProdaja, soldWeek);
         });
 
 }
 
 getAllProjects();
-function statistika(){
+
+function statistika(nedelja: Map<Date, number>, prodato: number) {
     const getDefaultChartCanvas = (): HTMLCanvasElement => {
         return document.getElementById('chart') as HTMLCanvasElement;
     }
-
+    const dani = Array.from(nedelja.keys());
     const initChart = (): Chart => {
         Chart.register(...registerables);
-        const labels = [
-            '1',
-            '2',
-            '3',
-            '4',
-            '5',
-            '6',
-            '7'
-        ];
+        const labels = dani;
 
+
+        const prodati = Array.from(nedelja.values());
         const data = {
             labels: labels,
             datasets: [{
-                label: 'LOADING...',
-                backgroundColor: 'blue',
-                borderColor: 'yellow',
-                data: [0, 10, 5, 2, 20, 30, 45],
+                label: `Ukupno prodato u zadnjih 7 dana ${prodato}`,
+                backgroundColor: 'black',
+                borderColor: 'red',
+                data: prodati,
             }]
         };
 
@@ -276,4 +347,3 @@ function statistika(){
 
 
 
-init();
