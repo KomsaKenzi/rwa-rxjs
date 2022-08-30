@@ -1,5 +1,5 @@
 body{
-    background-color:grey;
+    background-color: rgb(218, 193, 165);
 }
 
 
@@ -17,11 +17,17 @@ body{
 .cards {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     width: 100%;
 }
 
+.wiz_div, .war_div, .hea_div{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
 /* .wizard, .warrior, .healer {
     border: 1px;
     border-color: black;
@@ -38,17 +44,82 @@ body{
     display: flex;
     flex-direction: column;
     margin: 50px;
+    margin-right: 30px;
+}
+
+.gift {
+    display: flex;
+    flex-direction: column;
+    margin: 50px;
+    margin-left: 100px;
 }
 .objedinjeno {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
 }
 .statistic{
     margin-left: 50px;
 }
 .wizard_o, .warrior_o, .healer_o{
-    padding-bottom: 50px;
+    margin: 6px;
+    padding: 20px;
+    background-color: rgb(230, 219, 198);
+}
+
+.gift_wi, .gift_wa, .gift_he{
+    margin: 5px;
+    padding: 20px;
     border: 1px;
     border-color: black;
     border-style: dashed;
+}
+
+.warrior_buy, .healer_buy, .wizard_buy{
+    margin-top: 5px;
+    padding: 10px 0 10px 0;
+    background-color: rgb(211, 202, 188);
+    border-width: 1px;
+    border-color: rgb(121, 121, 121);
+}
+
+.boja{
+    background-color: rgba(226, 225, 225, 0.712);
+}
+.bojaK{
+    background-color: rgba(161, 158, 156, 0.384);
+}
+@media only screen and (max-width: 1300px){
+    .objedinjeno, .cards{
+        justify-content: center;
+    }
+
+}
+@media only screen and (max-width: 874px){
+    .balance{
+        justify-content: center;
+    }
+    .cards{
+        justify-content: center;
+    }
+    .war_div{
+        padding-left: 11px;
+    }
+}
+
+@media only screen and (max-width: 600px){
+    .statistic{
+        margin: 0;
+        width: 100vw;
+    }
+
+}
+
+@media only screen and (min-width: 600px){
+    .statistic{
+        margin-left: 50px;
+        width: 600px;
+        height: 300px;
+    }
+
 }

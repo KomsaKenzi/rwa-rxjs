@@ -1,8 +1,8 @@
-import { startWith, delay, every, BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith, interval, timer } from "rxjs";
+import { startWith, delay, every, BehaviorSubject, from, fromEvent, Observable, of, Subject, debounceTime, map, filter, switchMap, merge, concat, concatWith, concatMap, mergeWith, interval, timer, zip } from "rxjs";
 import { BubbleController, Chart, ChartType, registerables, UpdateModeEnum } from "chart.js";
 import { IKupovina } from "../interfaces/Kupovine";
 import { takeUntil, tap, take, takeWhile } from 'rxjs/operators';
-
+import * as fs from 'fs'
 
 
 let pocetnoStanje = {
@@ -16,7 +16,9 @@ let pocetnoStanje = {
     hprice: 500
 }
 
-
+const getDefaultChartCanvas = (): HTMLCanvasElement => {
+    return document.getElementById('chart') as HTMLCanvasElement;
+}
 
 
 function init() {
@@ -27,10 +29,18 @@ function init() {
     balance.appendChild(novac);
 
     const cards = document.getElementsByClassName('cards')[0];
+    const wiz_div = document.createElement("div");
+    wiz_div.classList.add("wiz_div");
+    const war_div = document.createElement("div");
+    war_div.classList.add("war_div");
+    const hea_div = document.createElement("div");
+    hea_div.classList.add("hea_div");
+
+    
     const wizard = document.createElement("img");
     wizard.classList.add("wizard");
     wizard.src = "./src/pics/wizard.png";
-    cards.appendChild(wizard);
+    wiz_div.appendChild(wizard);
 
     const wizard_info = document.createElement("div");
     wizard_info.classList.add("info");
@@ -41,18 +51,18 @@ function init() {
 <span>Defence: 40</span>
 <span>Attack: 70</span>
 <span>Mana: 100</span>`;
-    cards.appendChild(wizard_info);
+    wiz_div.appendChild(wizard_info);
 
     const wizard_buy = document.createElement("button");
     //wizard_buy.onclick = wizard_bought;
     wizard_buy.classList.add("wizard_buy");
     wizard_buy.innerHTML = "Buy"
     wizard_info.appendChild(wizard_buy);
-
+    cards.appendChild(wiz_div);
     const warrior = document.createElement("img");
     warrior.classList.add("warrior");
     warrior.src = "./src/pics/warrior.png";
-    cards.appendChild(warrior);
+    war_div.appendChild(warrior);
 
     const warrior_info = document.createElement("div");
     warrior_info.classList.add("info");
@@ -63,17 +73,18 @@ function init() {
 <span>Defence: 80</span>
 <span>Attack: 50</span>
 <span>Mana: 20</span>`;
-    cards.appendChild(warrior_info);
+    war_div.appendChild(warrior_info);
 
     const warrior_buy = document.createElement("button");
     warrior_buy.classList.add("warrior_buy");
     warrior_buy.innerHTML = "Buy"
     warrior_info.appendChild(warrior_buy);
+    cards.appendChild(war_div);
 
     const healer = document.createElement("img");
     healer.classList.add("healer");
     healer.src = "./src/pics/healer.png";
-    cards.appendChild(healer);
+    hea_div.appendChild(healer);
 
     const healer_info = document.createElement("div");
     healer_info.classList.add("info");
@@ -84,13 +95,13 @@ function init() {
 <span>Defence: 50</span>
 <span>Attack: 20</span>
 <span>Mana: 150</span>`;
-    cards.appendChild(healer_info);
+    hea_div.appendChild(healer_info);
 
     const healer_buy = document.createElement("button");
     healer_buy.classList.add("healer_buy");
     healer_buy.innerHTML = "Buy"
     healer_info.appendChild(healer_buy);
-
+    cards.appendChild(hea_div);
 
     const cards_owned = document.getElementsByClassName('cards_owned')[0];
 
@@ -109,22 +120,36 @@ function init() {
     healer_o.innerHTML = `Healers owned: ${pocetnoStanje.healer}`;
     cards_owned.appendChild(healer_o);
 
-    //sendAllEmails();
-    //statistika();
+    const gift = document.getElementsByClassName('gift')[0];
+
+    const gift_wi = document.createElement("div");
+    gift_wi.classList.add("gift_wi");
+    gift_wi.innerHTML = `Take one time bonus 5 wizards!`;
+    gift.appendChild(gift_wi);
+
+    const gift_wa = document.createElement("div");
+    gift_wa.classList.add("gift_wa");
+    gift_wa.innerHTML = `Take one time bonus 5 warriors!`;
+    gift.appendChild(gift_wa);
+
+    const gift_he = document.createElement("div");
+    gift_he.classList.add("gift_he");
+    gift_he.innerHTML = `Take one time bonus 5 healers!`;
+    gift.appendChild(gift_he);
 }
 init();
 
 function FirstPromise() {
     const p = new Promise((resolve, reject) => {
         setTimeout(() => {
-            const randInt = Math.round(Math.random() * 100);
+            const randInt = Math.round(Math.random() * 15);
             resolve(randInt);
         }, 2000);
     });
     return p;
 }
 
-const source = interval(3000);
+const source = interval(5000);
 
   var kupovinaK = source.pipe(
     filter(_ => (pocetnoStanje.wiprice > 100) || (pocetnoStanje.waprice > 100) || (pocetnoStanje.hprice > 100))
@@ -143,7 +168,7 @@ fromEvent(wizard_kupljen, 'click').pipe(
   )
   .subscribe(_ => {
     wizard_bought();
-    console.log("reset")
+    //console.log("reset")
     
   });
 
@@ -154,7 +179,7 @@ fromEvent(warrior_kupljen, 'click').pipe(
   )
   .subscribe(_ => {
     warrior_bought();
-    console.log("reset")
+    //console.log("reset")
     
   });
 
@@ -165,7 +190,7 @@ fromEvent(healer_kupljen, 'click').pipe(
   )
   .subscribe(_ => {
     healer_bought();
-    console.log("reset")
+    //console.log("reset")
     
   });
 
@@ -188,7 +213,7 @@ async function sendAllEmails() {
 }
 
 const bonus: Array<number> = new Array();
-const oneClickEvent = fromEvent(document, 'click').pipe(
+const oneClickEvent = fromEvent(getDefaultChartCanvas(), 'click').pipe(
     take(2),
     tap(v => {
         let x: number = v.screenX;
@@ -274,7 +299,7 @@ const getApiURL = (): string => {
 //     )
 // }
 const getAllProjects = () => {
-    fetch(`${getApiURL()}/db.json`)
+    fetch(`${getApiURL()}/src/db/db.json`)
         .then((res) => res.json())
         .then((data) => {
             const datum: Date = new Date;
@@ -311,9 +336,7 @@ const getAllProjects = () => {
 getAllProjects();
 
 function statistika(nedelja: Map<Date, number>, prodato: number) {
-    const getDefaultChartCanvas = (): HTMLCanvasElement => {
-        return document.getElementById('chart') as HTMLCanvasElement;
-    }
+   
     const dani = Array.from(nedelja.keys());
     const initChart = (): Chart => {
         Chart.register(...registerables);
@@ -325,8 +348,8 @@ function statistika(nedelja: Map<Date, number>, prodato: number) {
             labels: labels,
             datasets: [{
                 label: `Ukupno prodato u zadnjih 7 dana ${prodato}`,
-                backgroundColor: 'black',
-                borderColor: 'red',
+                backgroundColor: 'beige',
+                borderColor: 'rgb(119, 49, 17)',
                 data: prodati,
             }]
         };
@@ -345,5 +368,82 @@ function statistika(nedelja: Map<Date, number>, prodato: number) {
 
 }
 
+const eventTime = (eventName: string) =>
+  fromEvent(document, eventName).pipe(map(() => new Date()));
+
+const mouseClickDuration = zip(
+  eventTime('mouseup'),
+  eventTime('mousedown')
+
+).pipe(map(([start, end]) => Math.abs(start.getTime() - end.getTime())));
+
+mouseClickDuration.subscribe(x => smanji(-Math.round(x/1000)));
 
 
+
+var giftan_wi = document.getElementsByClassName("gift_wi")[0];
+var giftan_wiz = fromEvent(giftan_wi, 'click');
+var giftan_wa = document.getElementsByClassName("gift_wa")[0];
+var giftan_war = fromEvent(giftan_wa, 'click');
+var giftan_he = document.getElementsByClassName("gift_he")[0];
+var giftan_hea = fromEvent(giftan_he, 'click');
+  
+const source2 = interval(1000);
+var vrednost = 1;
+const result = source2.pipe(takeUntil(merge(giftan_wiz, giftan_war, giftan_hea)))
+.subscribe(x =>{
+    if(vrednost == 3){
+        giftan_wi.classList.remove("boja");
+        giftan_he.classList.add("boja");
+        giftan_wa.classList.remove("boja");
+        vrednost-=2;
+    }
+    else if(vrednost == 2){
+        giftan_wi.classList.remove("boja");
+        giftan_he.classList.remove("boja");
+        giftan_wa.classList.add("boja");
+        vrednost++;
+    }
+    else{ 
+        giftan_wi.classList.add("boja");
+        giftan_he.classList.remove("boja");
+        giftan_wa.classList.remove("boja");
+        vrednost++;
+    }
+}
+);
+giftan_wiz.pipe(take(1),takeUntil(merge(giftan_war, giftan_hea))).subscribe(_ => {
+    pocetnoStanje.wizard+=5;
+    giftan_wi.classList.remove("boja");
+    giftan_he.classList.remove("boja");
+    giftan_wa.classList.remove("boja");
+    giftan_wi.classList.add("bojaK");
+    giftan_he.classList.add("bojaK");
+    giftan_wa.classList.add("bojaK");
+    updateC();
+}
+);
+    
+giftan_war.pipe(take(1),takeUntil(merge(giftan_wiz, giftan_hea))).subscribe(_ => {
+    pocetnoStanje.warrior+=5;
+    giftan_wi.classList.remove("boja");
+    giftan_he.classList.remove("boja");
+    giftan_wa.classList.remove("boja");
+    giftan_wi.classList.add("bojaK");
+    giftan_he.classList.add("bojaK");
+    giftan_wa.classList.add("bojaK");
+    updateC();
+}
+);
+
+giftan_hea.pipe(take(1),takeUntil(merge(giftan_wiz, giftan_war))).subscribe(_ => {
+    pocetnoStanje.healer+=5;
+    giftan_wi.classList.remove("boja");
+    giftan_he.classList.remove("boja");
+    giftan_wa.classList.remove("boja");
+    giftan_wi.classList.add("bojaK");
+    giftan_he.classList.add("bojaK");
+    giftan_wa.classList.add("bojaK");
+    updateC();
+}
+);
