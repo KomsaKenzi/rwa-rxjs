@@ -2,7 +2,7 @@ import { startWith, delay, every, BehaviorSubject, from, fromEvent, Observable, 
 import { BubbleController, Chart, ChartType, registerables, UpdateModeEnum } from "chart.js";
 import { IKupovina } from "../interfaces/Kupovine";
 import { takeUntil, tap, take, takeWhile } from 'rxjs/operators';
-import * as fs from 'fs'
+const axios = require('axios');
 
 
 let pocetnoStanje = {
@@ -156,7 +156,7 @@ const source = interval(5000);
   ).subscribe({
     next: (num) => {
         console.log('Smanjen');
-      sendAllEmails();
+        probajSmanjiti();
     }
   })
 
@@ -194,7 +194,7 @@ fromEvent(healer_kupljen, 'click').pipe(
     
   });
 
-async function sendAllEmails() {
+async function probajSmanjiti() {
     await FirstPromise().then((x: number) => {
         const smanji1 = document.getElementsByClassName("smanjiti")[0];
         const smanji2 = document.getElementsByClassName("smanjiti")[1];
@@ -259,6 +259,7 @@ function healer_bought() {
         smanji3.innerHTML = `Price: ${pocetnoStanje.hprice}`;
         pocetnoStanje.healer++;
         updateC();
+        //prodajaDodaj();
     }
     else {
         console.log("Nedovoljno novaca");
@@ -288,17 +289,7 @@ const getApiURL = (): string => {
     return "http://127.0.0.1:5500/rwa-rxjs";
 };
 
-// const getAllProjects = (): Observable<IKupovina[]> => {
-//     return from(
-//         fetch(`${getApiURL()}/db.json`)
-//             .then((res) => {
-//                 if (res.ok) return res.json();
-//                 else throw new Error("Kupovine not found");
-//             })
-//             .catch((err) => (console.log("Nema kupovina")))
-//     )
-// }
-const getAllProjects = () => {
+const nadjiDatume = () => {
     fetch(`${getApiURL()}/src/db/db.json`)
         .then((res) => res.json())
         .then((data) => {
@@ -333,7 +324,7 @@ const getAllProjects = () => {
 
 }
 
-getAllProjects();
+nadjiDatume();
 
 function statistika(nedelja: Map<Date, number>, prodato: number) {
    
@@ -447,3 +438,28 @@ giftan_hea.pipe(take(1),takeUntil(merge(giftan_wiz, giftan_war))).subscribe(_ =>
     updateC();
 }
 );
+
+/*function prodajaDodaj(){
+var danasProdato :number;
+axios.get('http://localhost:3000/kupovine/24/')
+    .then(resp => {
+        var data = resp.data;
+        danasProdato = data.sold;
+    axios.put('http://localhost:3000/kupovine/24/', {
+    date: "8/30/2022",
+    sold: danasProdato+=1
+}).then(resp => {
+
+    console.log(resp.data);
+}).catch(error => {
+
+    console.log(error);
+});
+        
+    })
+    .catch(error => {
+        console.log(error);
+    });
+
+}
+*/
